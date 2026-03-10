@@ -2,42 +2,28 @@
 import { HouseholdDetailsSheet } from '@/components/globe/household-details-sheet'
 import { HungerGlobe } from '@/components/globe/hunger-globe'
 import React, { useEffect, useState } from 'react'
-// import { fetchHouseholds, MOCK_HOUSEHOLDS } from '@/lib/supabase';
-import { Household } from '@/lib/types';
+import { useHouseholds } from '../_hooks/householdData';
+import { Household } from '../_types/householdTypes';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const VisualizerPage = () => {
-    // const [households, setHouseholds] = useState<Household[]>(MOCK_HOUSEHOLDS);
-      const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
-      const [isLoading, setIsLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+    const { data: households = [], isLoading, error } = useHouseholds();
+    const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
+    const { setOpen } = useSidebar();
+
     useEffect(() => {
-        const loadData = async () => {
-          try {
-            setIsLoading(true);
-            setError(null);
-            // const data = await fetchHouseholds();
-            // setHouseholds(data);
-          } catch (err) {
-            console.error('Failed to load households:', err);
-            setError('Failed to load household data. Using demo data.');
-            // setHouseholds(MOCK_HOUSEHOLDS);
-          } finally {
-            setIsLoading(false);
-          }
-        };
-    
-        loadData();
-      }, []);
+      setOpen(false);
+    }, [setOpen]);
     
   return (
     <>
      <main className="w-full h-screen overflow-hidden">
 
-        {/* <HungerGlobe
+        <HungerGlobe
                 households={households}
                 onMarkerClick={setSelectedHousehold}
                 isLoading={isLoading}
-              /> */}
+              /> 
         
               <HouseholdDetailsSheet
                 household={selectedHousehold}

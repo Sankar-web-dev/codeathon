@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { HungerGlobe } from '@/components/globe/hunger-globe';
 import { HouseholdDetailsSheet } from '@/components/globe/household-details-sheet';
-import { Household } from '@/lib/types';
+import { Household } from '@/app/(dashboard)/visualizer/_types/householdTypes';
 // import { fetchHouseholds, MOCK_HOUSEHOLDS } from '@/lib/supabase';
 
 export default function Home() {

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState, Suspense } from 'react';
-import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
+import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Sphere, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { TextureLoader } from 'three';
-import { Household, HouseholdWithRisk, calculateRiskLevel, getRiskColor } from '@/lib/types';
+import { Household, HouseholdWithRisk, calculateRiskLevel, getRiskColor } from '@/app/(dashboard)/visualizer/_types/householdTypes';
 
 interface HungerGlobeProps {
   households: Household[];
@@ -18,15 +18,27 @@ function PinMarker({
   position, 
   color, 
   household, 
-  onClick 
+  onClick,
+  onHoverChange
 }: { 
   position: [number, number, number]; 
   color: string;
   household: HouseholdWithRisk;
   onClick: (household: Household) => void;
+  onHoverChange: (hovered: boolean) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
+
+  const handlePointerOver = () => {
+    setHovered(true);
+    onHoverChange(true);
+  };
+
+  const handlePointerOut = () => {
+    setHovered(false);
+    onHoverChange(false);
+  };
 
   return (
     <group 
@@ -36,8 +48,8 @@ function PinMarker({
         e.stopPropagation();
         onClick(household);
       }}
-      onPointerOver={() => setHovered(true)}
-      onPointerOut={() => setHovered(false)}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
     >
       {/* Pin head (sphere) */}
       <mesh position={[0, 3, 0]} scale={hovered ? 1.3 : 1}>
@@ -74,11 +86,14 @@ function PinMarker({
             pointerEvents: 'none',
           }}
         >
-          <div className="bg-white text-black px-3 py-2 rounded-lg shadow-lg text-sm whitespace-nowrap">
-            <div className="font-semibold">{household.name}</div>
-            <div className="text-gray-600 text-xs">{household.location_description}</div>
-            <div className="text-xs mt-1">
-              Risk Score: <span style={{ color }}>{household.hunger_risk_score}%</span>
+          <div className="bg-background/95 backdrop-blur-xl text-foreground px-4 py-3 rounded-xl shadow-2xl border border-border/50 font-serif">
+            <div className="font-semibold text-sm">Household #{household.household_id}</div>
+            <div className="text-xs text-muted-foreground mt-1 capitalize">
+              {household.risk_level} Risk
+            </div>
+            <div className="text-xs mt-2 flex items-center gap-2">
+              <span className="text-muted-foreground">Score:</span>
+              <span className="font-bold" style={{ color }}>{Math.round((household.hunger_probability ?? 0) * 100)}%</span>
             </div>
           </div>
         </Html>
@@ -90,6 +105,7 @@ function PinMarker({
 function GlobeScene({ households, onMarkerClick, isLoading }: HungerGlobeProps) {
   const globeRef = useRef<THREE.Group>(null);
   const [householdsWithRisk, setHouseholdsWithRisk] = useState<HouseholdWithRisk[]>([]);
+  const [isHovering, setIsHovering] = useState(false);
 
   // Load Earth textures
   const [earthMap, bumpMap, specularMap] = useLoader(TextureLoader, [
@@ -113,7 +129,7 @@ function GlobeScene({ households, onMarkerClick, isLoading }: HungerGlobeProps) 
   // Process households and calculate risk levels
   useEffect(() => {
     const processed = households.map((h) => {
-      const riskLevel = calculateRiskLevel(h.hunger_risk_score);
+      const riskLevel = calculateRiskLevel((h.hunger_probability ?? 0) * 100);
       return {
         ...h,
         risk_level: riskLevel,
@@ -122,13 +138,6 @@ function GlobeScene({ households, onMarkerClick, isLoading }: HungerGlobeProps) 
     });
     setHouseholdsWithRisk(processed);
   }, [households]);
-
-  // Animation loop - slow rotation
-  useFrame(() => {
-    if (globeRef.current && !isLoading) {
-      globeRef.current.rotation.y += 0.001;
-    }
-  });
 
   return (
     <>
@@ -153,8 +162,10 @@ function GlobeScene({ households, onMarkerClick, isLoading }: HungerGlobeProps) 
         </Sphere>
 
         {/* Pin markers for each household */}
-        {householdsWithRisk.map((household) => {
-          const position = latLonTo3D(household.latitude, household.longitude);
+        {householdsWithRisk
+          .filter((household) => household.lat !== null && household.lon !== null)
+          .map((household) => {
+          const position = latLonTo3D(household.lat!, household.lon!);
           
           // Calculate rotation to make pin point outward from globe center
           const pos = new THREE.Vector3(...position);
@@ -173,6 +184,7 @@ function GlobeScene({ households, onMarkerClick, isLoading }: HungerGlobeProps) 
                 color={household.risk_color}
                 household={household}
                 onClick={onMarkerClick}
+                onHoverChange={setIsHovering}
               />
             </group>
           );
@@ -181,7 +193,7 @@ function GlobeScene({ households, onMarkerClick, isLoading }: HungerGlobeProps) 
 
       {/* Orbit controls */}
       <OrbitControls
-        autoRotate={isLoading}
+        autoRotate={!isHovering && !isLoading}
         autoRotateSpeed={0.5}
         enableZoom={true}
         enablePan={false}
@@ -225,29 +237,53 @@ export function HungerGlobe({
       </Canvas>
 
       {/* Legend */}
-      <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md rounded-lg p-4 text-white">
-        <h3 className="font-semibold mb-2 text-sm">Hunger Risk Level</h3>
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span>Low Risk (0-33%)</span>
+      <div className="absolute bottom-6 left-6 bg-background/80 backdrop-blur-xl rounded-2xl p-5 text-foreground border border-border/50 shadow-2xl font-serif">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+          <h3 className="font-bold text-sm tracking-wide">Hunger Risk Level</h3>
+        </div>
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center gap-3 group cursor-default">
+            <div className="relative">
+              <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30"></div>
+              <div className="absolute inset-0 w-4 h-4 rounded-full bg-emerald-500 animate-ping opacity-20"></div>
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">Low Risk</span>
+              <span className="text-muted-foreground ml-2 text-xs">(0-33%)</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-            <span>Medium Risk (34-66%)</span>
+          <div className="flex items-center gap-3 group cursor-default">
+            <div className="relative">
+              <div className="w-4 h-4 rounded-full bg-amber-500 shadow-lg shadow-amber-500/30"></div>
+              <div className="absolute inset-0 w-4 h-4 rounded-full bg-amber-500 animate-ping opacity-20"></div>
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">Medium Risk</span>
+              <span className="text-muted-foreground ml-2 text-xs">(34-66%)</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span>High Risk (67-100%)</span>
+          <div className="flex items-center gap-3 group cursor-default">
+            <div className="relative">
+              <div className="w-4 h-4 rounded-full bg-red-500 shadow-lg shadow-red-500/30"></div>
+              <div className="absolute inset-0 w-4 h-4 rounded-full bg-red-500 animate-ping opacity-20"></div>
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">High Risk</span>
+              <span className="text-muted-foreground ml-2 text-xs">(67-100%)</span>
+            </div>
           </div>
+        </div>
+        <div className="mt-4 pt-3 border-t border-border/50">
+          <p className="text-xs text-muted-foreground">Click on markers to view details</p>
         </div>
       </div>
 
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm pointer-events-none">
-          <div className="text-center">
+          <div className="text-center font-serif">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4" />
-            <p className="text-white text-lg">Loading household data...</p>
+            <p className="text-white text-lg font-medium">Loading household data...</p>
           </div>
         </div>
       )}

@@ -2,13 +2,14 @@ export type RiskLevel = 'low' | 'medium' | 'high';
 
 export interface Household {
   id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  hunger_risk_score: number;
-  household_size: number;
-  location_description?: string;
-  created_at?: string;
+  household_id: number;
+  village_id: number | null;
+  family_size: number | null;
+  lat: number | null;
+  lon: number | null;
+  priority_level: string | null;
+  hunger_probability: number | null;
+  created_at: string | null;
 }
 
 export interface HouseholdWithRisk extends Household {
