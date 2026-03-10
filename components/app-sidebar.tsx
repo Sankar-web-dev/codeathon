@@ -13,7 +13,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, UploadIcon } from "lucide-react"
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, UploadIcon, Handshake } from "lucide-react"
 import { createSupabaseClient } from "@/lib/supabase"
 
 // This is sample data.
@@ -22,10 +22,10 @@ const data = {
     {
       name: "Food Rescue Network",
       logo: (
-        <GalleryVerticalEndIcon
+        <Handshake
         />
       ),
-      plan: "Community",
+      plan: "Zero Hunger",
     },
   ],
   navMain: [
@@ -39,36 +39,7 @@ const data = {
       url: "/dashboard/upload",
       icon: <UploadIcon />,
     },
-    {
-      title: "Donations",
-      url: "#",
-      icon: <PieChartIcon />,
-      items: [
-        {
-          title: "Post Donation",
-          url: "/dashboard/donate",
-        },
-        {
-          title: "My Donations",
-          url: "/dashboard/my-donations",
-        },
-      ],
-    },
-    {
-      title: "Claims",
-      url: "#",
-      icon: <MapIcon />,
-      items: [
-        {
-          title: "Available Food",
-          url: "/dashboard/available",
-        },
-        {
-          title: "My Claims",
-          url: "/dashboard/my-claims",
-        },
-      ],
-    },
+    
   ],
   projects: [
     {
@@ -90,6 +61,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     email: string;
     avatar: string;
   } | null>(null);
+  const [isDonor, setIsDonor] = React.useState(false);
+  const [isVolunteer, setIsVolunteer] = React.useState(false);
 
   React.useEffect(() => {
     const fetchUser = async () => {
@@ -101,13 +74,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           email: user.email || '',
           avatar: user.user_metadata?.avatar_url || "/default-avatar.jpg"
         });
+        // Check if user is a donor
+        const { data: donor } = await supabase.from('donors').select('*').eq('email', user.email).single();
+        setIsDonor(!!donor);
+        if (!donor) {
+          const { data: volunteer } = await supabase.from('volunteers').select('*').eq('email', user.email).single();
+          setIsVolunteer(!!volunteer);
+        }
       }
     };
     fetchUser();
   }, []);
 
+  const navMain = isDonor ? [
+    {
+      title: "Create Food Post",
+      url: "/post-food/create",
+      icon: <UploadIcon />,
+    },
+    {
+      title: "View My Posts",
+      url: "/post-food",
+      icon: <PieChartIcon />,
+    }
+  ] : isVolunteer ? [
+    {
+      title: "View Donations",
+      url: "/donations",
+      icon: <PieChartIcon />,
+    },
+    {
+      title: "My Deliveries",
+      url: "/my-deliveries",
+      icon: <MapIcon />,
+    }
+  ] : data.navMain;
+
   const sidebarData = {
     ...data,
+    navMain,
     user: user || { name: "Loading...", email: "", avatar: "/default-avatar.jpg" },
   };
 
@@ -118,7 +123,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={sidebarData.navMain} />
-        <NavProjects projects={sidebarData.projects} />
+        {/* <NavProjects projects={sidebarData.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={sidebarData.user} />

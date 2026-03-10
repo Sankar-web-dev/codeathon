@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -20,11 +21,11 @@ export default function Login() {
     e.preventDefault();
     loginMutation.mutate({ email, password }, {
       onSuccess: () => {
-        alert('Login successful!');
+        toast.success('Login successful!');
         router.push('/dashboard');
       },
       onError: (error) => {
-        alert(`Login failed: ${error.message}`);
+        toast.error(`Login failed: ${error.message}`);
       }
     });
   };

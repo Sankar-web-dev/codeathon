@@ -5,7 +5,7 @@ import { useState } from "react"
 import { createSupabaseClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { UploadIcon } from "lucide-react"
+import { UploadIcon, FileSpreadsheetIcon, BarChart3Icon, PieChartIcon, UsersIcon } from "lucide-react"
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, PieChart, Pie, Cell } from "recharts"
 import { useRouter } from "next/navigation"
 type HouseholdData = {
@@ -117,107 +117,127 @@ export default function UploadExcel() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UploadIcon className="h-5 w-5" />
-          Upload Household Data
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileUpload}
-            disabled={loading}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          {loading && <p>Processing...</p>}
-          {data.length > 0 && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Households</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{data.length}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Average Family Size</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{(data.reduce((sum, row) => sum + row.family_size, 0) / data.length).toFixed(1)}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Unique Villages</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{new Set(data.map(row => row.village_id)).size}</div>
-                  </CardContent>
-                </Card>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Family Size Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={familySizeDistribution()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="value" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Households by Village</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={villageDistribution()}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => {
-                            if (!name || percent === undefined) return '';
-                            return `${name} ${(percent * 100).toFixed(0)}%`;
-                          }}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {villageDistribution().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-              <Button onClick={sendToBackend} disabled={loading} className="w-full">
-                {loading ? "Predicting..." : "Predict Hunger Risk"}
-              </Button>
+    <div className="bg-gradient-to-br from-green-50 via-white to-blue-50 p-6 rounded-lg">
+      <Card className="shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-800">
+            <FileSpreadsheetIcon className="h-8 w-8 text-green-600" />
+            Upload Household Data
+          </CardTitle>
+          <p className="text-gray-600 mt-2">Analyze and predict hunger risk for households by uploading your Excel file.</p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                disabled={loading}
+                className="hidden"
+                id="file-upload"
+              />
+              <label htmlFor="file-upload" className="cursor-pointer">
+                <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-lg font-medium text-gray-700">Click to upload Excel file</p>
+                <p className="text-sm text-gray-500">Supported formats: .xlsx, .xls</p>
+              </label>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            {loading && <p className="text-center text-blue-600">Processing...</p>}
+            {data.length > 0 && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Households</CardTitle>
+                      <BarChart3Icon className="h-5 w-5" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{data.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Average Family Size</CardTitle>
+                      <UsersIcon className="h-5 w-5" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{(data.reduce((sum, row) => sum + row.family_size, 0) / data.length).toFixed(1)}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Unique Villages</CardTitle>
+                      <PieChartIcon className="h-5 w-5" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{new Set(data.map(row => row.village_id)).size}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3Icon className="h-5 w-5" />
+                        Family Size Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={familySizeDistribution()}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="value" fill="#8884d8" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                  <Card className="shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <PieChartIcon className="h-5 w-5" />
+                        Households by Village
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={villageDistribution()}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => {
+                              if (!name || percent === undefined) return '';
+                              return `${name} ${(percent * 100).toFixed(0)}%`;
+                            }}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {villageDistribution().map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+                <Button onClick={sendToBackend} disabled={loading} className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 rounded-lg shadow-lg">
+                  {loading ? "Predicting..." : "Predict Hunger Risk"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 
