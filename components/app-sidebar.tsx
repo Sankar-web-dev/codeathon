@@ -13,8 +13,9 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, GitGraphIcon, Globe } from "lucide-react"
 import { createSupabaseClient } from "@/lib/supabase"
+
 
 // This is sample data.
 const data = {
@@ -35,6 +36,11 @@ const data = {
       icon: <FrameIcon />,
     },
     {
+      title: "Visualizer",
+      url: "/visualizer",
+      icon: <Globe />,
+    },
+    {
       title: "Donations",
       url: "#",
       icon: <PieChartIcon />,
@@ -49,34 +55,9 @@ const data = {
         },
       ],
     },
-    {
-      title: "Claims",
-      url: "#",
-      icon: <MapIcon />,
-      items: [
-        {
-          title: "Available Food",
-          url: "/dashboard/available",
-        },
-        {
-          title: "My Claims",
-          url: "/dashboard/my-claims",
-        },
-      ],
-    },
+    
   ],
-  projects: [
-    {
-      name: "Food Rescue Project",
-      url: "/dashboard/project/food-rescue",
-      icon: <BookOpenIcon />,
-    },
-    {
-      name: "Community Outreach",
-      url: "/dashboard/project/outreach",
-      icon: <BotIcon />,
-    },
-  ],
+ 
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -89,6 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   React.useEffect(() => {
     const fetchUser = async () => {
       const supabase = createSupabaseClient();
+      if (!supabase) return;
       const { data: { user }, error } = await supabase.auth.getUser();
       if (user) {
         setUser({
@@ -113,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={sidebarData.navMain} />
-        <NavProjects projects={sidebarData.projects} />
+        
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={sidebarData.user} />

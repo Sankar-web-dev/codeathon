@@ -1,114 +1,88 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { HungerGlobe } from '@/components/globe/hunger-globe';
+import { HouseholdDetailsSheet } from '@/components/globe/household-details-sheet';
+import { Household } from '@/lib/types';
+// import { fetchHouseholds, MOCK_HOUSEHOLDS } from '@/lib/supabase';
 
 export default function Home() {
+  // const [households, setHouseholds] = useState<Household[]>(MOCK_HOUSEHOLDS);
+  const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // const data = await fetchHouseholds();
+        // setHouseholds(data);
+      } catch (err) {
+        console.error('Failed to load households:', err);
+        setError('Failed to load household data. Using demo data.');
+        // setHouseholds(MOCK_HOUSEHOLDS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   return (
-    
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          Food Rescue Network
-        </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Connecting restaurants, marriage halls, and hostels with NGOs and volunteers to redistribute surplus food instead of wasting it. Like Uber for surplus food!
+    <main className="w-full h-screen overflow-hidden">
+      {/* <HungerGlobe
+        households={households}
+        onMarkerClick={setSelectedHousehold}
+        isLoading={isLoading}
+      /> */}
+
+      <HouseholdDetailsSheet
+        household={selectedHousehold}
+        isOpen={selectedHousehold !== null}
+        onClose={() => setSelectedHousehold(null)}
+      />
+
+      {error && (
+        <div className="absolute bottom-4 right-4 bg-yellow-600 text-white px-4 py-2 rounded-lg max-w-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Header overlay */}
+      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/50 to-transparent pointer-events-none p-6">
+        <h1 className="text-white text-3xl font-bold">Hunger Risk Globe</h1>
+        <p className="text-gray-300 text-sm mt-2">
+          Interactive visualization of household food security risks. Click any marker to view details.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/signup">
-            <Button size="lg" className="bg-green-600 hover:bg-green-700">
-              Join as Donor 🍽️
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-              Join as Receiver 🤝
-            </Button>
-          </Link>
-        </div>
-      </section>
+      </div>
 
-      {/* Features Section */}
-      <section className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          Core Features
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="text-center p-6 bg-white rounded-lg shadow-md">
-            <div className="text-4xl mb-4">📝</div>
-            <h3 className="text-xl font-semibold mb-2">Food Donation Post</h3>
-            <p className="text-gray-600">
-              Restaurants post leftover food with details like quantity, location, and pickup time.
-            </p>
-          </div>
-          <div className="text-center p-6 bg-white rounded-lg shadow-md">
-            <div className="text-4xl mb-4">🗺️</div>
-            <h3 className="text-xl font-semibold mb-2">Live Food Map</h3>
-            <p className="text-gray-600">
-              View available donations near you with real-time updates.
-            </p>
-          </div>
-          <div className="text-center p-6 bg-white rounded-lg shadow-md">
-            <div className="text-4xl mb-4">✅</div>
-            <h3 className="text-xl font-semibold mb-2">Claim Food</h3>
-            <p className="text-gray-600">
-              NGOs and volunteers can easily claim pickup for available food.
-            </p>
-          </div>
-          <div className="text-center p-6 bg-white rounded-lg shadow-md">
-            <div className="text-4xl mb-4">🚚</div>
-            <h3 className="text-xl font-semibold mb-2">Pickup Tracking</h3>
-            <p className="text-gray-600">
-              Track status from available to claimed, picked up, and delivered.
-            </p>
-          </div>
+      {/* Legend */}
+      <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-sm rounded-lg p-4 text-sm text-white space-y-2 pointer-events-auto">
+        <p className="font-semibold mb-3">Risk Levels</p>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <span>Low Risk (0-33)</span>
         </div>
-      </section>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-orange-500" />
+          <span>Medium Risk (34-66)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-500" />
+          <span>High Risk (67-100)</span>
+        </div>
+      </div>
 
-      {/* How It Works */}
-      <section className="bg-white py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            How It Works
-          </h2>
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl mb-4">🏪</div>
-              <h3 className="text-xl font-semibold mb-2">1. Donor Posts</h3>
-              <p className="text-gray-600">
-                Restaurants, halls, or hostels post surplus food details.
-              </p>
-            </div>
-            <div>
-              <div className="text-4xl mb-4">📱</div>
-              <h3 className="text-xl font-semibold mb-2">2. Receiver Claims</h3>
-              <p className="text-gray-600">
-                NGOs or volunteers claim the food pickup.
-              </p>
-            </div>
-            <div>
-              <div className="text-4xl mb-4">🚴</div>
-              <h3 className="text-xl font-semibold mb-2">3. Volunteer Picks Up</h3>
-              <p className="text-gray-600">
-                A volunteer collects the food from the donor.
-              </p>
-            </div>
-            <div>
-              <div className="text-4xl mb-4">🍲</div>
-              <h3 className="text-xl font-semibold mb-2">4. Food Delivered</h3>
-              <p className="text-gray-600">
-                Surplus food reaches those in need, reducing waste.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 text-center">
-          <p>&copy; 2024 Food Rescue Network. Fighting food waste, one meal at a time.</p>
-        </div>
-      </footer>
-    </div>
+      {/* Controls hint */}
+      <div className="absolute bottom-6 right-6 bg-black/60 backdrop-blur-sm rounded-lg p-4 text-sm text-white pointer-events-auto">
+        <p className="font-semibold mb-2">Controls</p>
+        <p className="text-gray-300">🖱️ Drag to rotate</p>
+        <p className="text-gray-300">🔍 Scroll to zoom</p>
+        <p className="text-gray-300">Click markers for details</p>
+      </div>
+    </main>
   );
 }
