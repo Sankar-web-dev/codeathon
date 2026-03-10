@@ -5,6 +5,7 @@ import "./globals.css";
 import Providers from "@/components/providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Navbar from "@/components/navbar";
+import { Chatbot } from "@/components/chatbot";
 
 const sanchez = Sanchez({
   variable: "--font-serif",
@@ -36,6 +37,7 @@ export default function RootLayout({
         <TooltipProvider>
           <Providers>{children}</Providers>
         </TooltipProvider>
+        <Chatbot />
       </body>
     </html>
   );
