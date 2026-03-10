@@ -58,12 +58,52 @@ export default function UploadExcel() {
     if (data.length === 0) return
     setLoading(true)
     try {
+      console.log("📊 Raw Excel data:", data)
+      
+      // Map Excel column names to snake_case expected by FastAPI
+      const columnMapping: Record<string, string> = {
+        'Meals_per_day': 'meals_per_day',
+        'Inflation_rate': 'inflation_rate', 
+        'Child_underweight_cases': 'child_underweight_cases',
+        'Child_wasting_cases': 'child_wasting_cases',
+        'Anemia_cases': 'anemia_cases',
+        'Pregnant_women': 'pregnant_women',
+        'Breastfeeding_mothers': 'breastfeeding_mothers',
+        'Recent_illness_case': 'recent_illness_case',
+        'Hospital_visits_last_year': 'hospital_visits_last_year',
+        'Income_stability_score': 'income_stability_score',
+        'Days_worked_last_month': 'days_worked_last_month',
+        'Debt_amount': 'debt_amount',
+        'Assets_owned': 'assets_owned',
+        'Clean_water_access': 'clean_water_access',
+        'Toilet_access': 'toilet_access'
+        // Other fields like household_id, village_id, etc. are already correct
+      }
+      
+      // Transform data to match expected field names
+      const transformedData = data.map(item => {
+        const transformed: any = {}
+        Object.keys(item).forEach(key => {
+          const mappedKey = columnMapping[key] || key
+          transformed[mappedKey] = item[key]
+        })
+        return transformed
+      })
+      
+      console.log("🔄 Mapped Excel data to snake_case:", transformedData)
+      console.log("📋 First record has", Object.keys(transformedData[0]).length, "fields")
       const supabase = createSupabaseClient()
       const response = await fetch("http://10.154.202.78:8000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(transformedData)
       })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("❌ Backend validation error:", errorText)
+        return
+      }
       
       const result = await response.json()
       if (Array.isArray(result)) {
@@ -80,8 +120,9 @@ export default function UploadExcel() {
         }
         router.push("/households");
       }
+      console.log(result);
     } catch (error) {
-      console.error("Error:", error)
+      console.error("💥 Error:", error)
     } finally {
       setLoading(false)
     }
