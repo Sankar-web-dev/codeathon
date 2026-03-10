@@ -43,25 +43,30 @@ const data = {
       icon: <UploadIcon />,
     },
     {
+      title: "Households",
+      url: "/households",
+      icon: <GalleryVerticalEndIcon />,
+    },
+    {
       title: "Visualizer",
       url: "/visualizer",
       icon: <Globe />,
     },
-    {
-      title: "Donations",
-      url: "#",
-      icon: <PieChartIcon />,
-      items: [
-        {
-          title: "Post Donation",
-          url: "/dashboard/donate",
-        },
-        {
-          title: "My Donations",
-          url: "/dashboard/my-donations",
-        },
-      ],
-    },
+    // {
+    //   title: "Donations",
+    //   url: "#",
+    //   icon: <PieChartIcon />,
+    //   items: [
+    //     {
+    //       title: "Post Donation",
+    //       url: "/dashboard/donate",
+    //     },
+    //     {
+    //       title: "My Donations",
+    //       url: "/dashboard/my-donations",
+    //     },
+    //   ],
+    // },
     
   ],
  

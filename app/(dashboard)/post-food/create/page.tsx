@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createSupabaseClient } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { PlusIcon, TrashIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, ShoppingBasketIcon, ArrowRightIcon, SparklesIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DonationItem {
   food_type: string;
@@ -78,7 +79,6 @@ export default function PostForm() {
       }));
       const { error } = await supabase.from('donations').insert(inserts);
       if (error) {
-        console.error('Insert error:', error);
         toast.error('Failed to post donations');
       } else {
         toast.success('Donations posted successfully!');
@@ -86,7 +86,6 @@ export default function PostForm() {
         router.push('/post-food');
       }
     } catch (error) {
-      console.error('Submit error:', error);
       toast.error('An error occurred while posting donations');
     } finally {
       setLoading(false);
@@ -94,56 +93,118 @@ export default function PostForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Post Food Donations</CardTitle>
-          <CardDescription className="text-center">Add multiple food items for donation</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {items.map((item, index) => (
-              <div key={index} className="flex items-end space-x-2 p-4 border rounded-lg">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor={`food_type_${index}`}>Food Type</Label>
-                  <Input
-                    id={`food_type_${index}`}
-                    type="text"
-                    value={item.food_type}
-                    onChange={(e) => updateItem(index, 'food_type', e.target.value)}
-                    placeholder="e.g., Rice, Bread"
-                    required
-                  />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor={`quantity_${index}`}>Quantity</Label>
-                  <Input
-                    id={`quantity_${index}`}
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                    placeholder="e.g., 10"
-                    min="1"
-                    required
-                  />
-                </div>
-                {items.length > 1 && (
-                  <Button type="button" variant="destructive" size="sm" onClick={() => removeItem(index)}>
-                    <TrashIcon className="w-4 h-4" />
-                  </Button>
-                )}
+    <div className="min-h-screen bg-[#fcfdfe] py-16 px-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto"
+      >
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-16 h-16 bg-emerald-100 rounded-3xl flex items-center justify-center mb-4 shadow-inner">
+            <ShoppingBasketIcon className="h-8 w-8 text-emerald-600" />
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Post Donation</h1>
+          <p className="text-slate-500 font-medium mt-2 text-center">
+            List surplus food items to connect with local volunteers instantly.
+          </p>
+        </div>
+
+        <Card className="border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-[32px] overflow-hidden bg-white">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-slate-800">Donation Manifest</CardTitle>
+                <CardDescription>Specify the items you are ready to give</CardDescription>
               </div>
-            ))}
-            <Button type="button" variant="outline" onClick={addItem} className="w-full">
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Add Another Item
-            </Button>
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Posting...' : 'Post Donations'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+                {items.length} {items.length === 1 ? 'Item' : 'Items'}
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <AnimatePresence initial={false}>
+                {items.map((item, index) => (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                    className="group relative flex items-end gap-3 p-5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50"
+                  >
+                    <div className="flex-1 space-y-2">
+                      <Label className="text-xs font-bold uppercase text-slate-400 tracking-widest ml-1">Type of Food</Label>
+                      <Input
+                        type="text"
+                        value={item.food_type}
+                        onChange={(e) => updateItem(index, 'food_type', e.target.value)}
+                        placeholder="e.g. Fresh Apples"
+                        className="h-12 bg-white border-slate-200 rounded-xl focus:ring-emerald-500"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="w-24 md:w-32 space-y-2">
+                      <Label className="text-xs font-bold uppercase text-slate-400 tracking-widest ml-1">Qty (kg)</Label>
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                        placeholder="0"
+                        min="1"
+                        className="h-12 bg-white border-slate-200 rounded-xl focus:ring-emerald-500"
+                        required
+                      />
+                    </div>
+
+                    {items.length > 1 && (
+                      <button 
+                        type="button" 
+                        onClick={() => removeItem(index)}
+                        className="h-12 w-12 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              <div className="pt-2 space-y-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={addItem} 
+                  className="w-full h-14 rounded-2xl border-2 border-dashed border-slate-200 text-slate-500 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all font-bold"
+                >
+                  <PlusIcon className="w-5 h-5 mr-2" />
+                  Add Another Food Item
+                </Button>
+
+                <Button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="w-full h-16 rounded-[24px] bg-slate-900 hover:bg-slate-800 text-white text-lg font-bold shadow-2xl shadow-slate-200 flex gap-3 active:scale-[0.98] transition-all"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      Publishing to Network...
+                    </div>
+                  ) : (
+                    <>
+                      <SparklesIcon className="w-6 h-6 text-emerald-400" />
+                      Broadcast Donation
+                      <ArrowRightIcon className="w-5 h-5 opacity-50" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

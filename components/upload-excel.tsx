@@ -5,27 +5,34 @@ import { useState } from "react"
 import { createSupabaseClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { UploadIcon, FileSpreadsheetIcon, BarChart3Icon, PieChartIcon, UsersIcon } from "lucide-react"
+import { 
+  UploadIcon, FileSpreadsheetIcon, BarChart3Icon, 
+  PieChartIcon, UsersIcon, BrainCircuitIcon, DatabaseIcon,
+  CheckCircle2Icon
+} from "lucide-react"
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, PieChart, Pie, Cell } from "recharts"
 import { useRouter } from "next/navigation"
+import { motion, AnimatePresence } from "framer-motion"
+
 type HouseholdData = {
   household_id: string | number
   village_id: string | number
   family_size: number
   lat: number
   lon: number
-  [key: string]: any // For additional columns
+  [key: string]: any 
 }
 
 export default function UploadExcel() {
   const [data, setData] = useState<HouseholdData[]>([])
   const [loading, setLoading] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
   const router = useRouter()
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+  const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444']
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement> | any) => {
+    const file = e.target.files?.[0] || e.dataTransfer?.files?.[0]
     if (!file) return
 
     setLoading(true)
@@ -40,57 +47,41 @@ export default function UploadExcel() {
         setData(jsonData as HouseholdData[])
       } catch (error) {
         console.error("Error parsing Excel:", error)
-        alert("Error parsing Excel file")
       } finally {
         setLoading(false)
       }
     }
-
     reader.readAsBinaryString(file)
   }
 
   const sendToBackend = async () => {
     if (data.length === 0) return
-
     setLoading(true)
     try {
-        const supabase = createSupabaseClient()
-      
+      const supabase = createSupabaseClient()
       const response = await fetch("http://10.154.202.78:8000/predict", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       })
       
-
       const result = await response.json()
       if (Array.isArray(result)) {
-      for (const item of result) {
-        const { error } = await supabase.from("households").insert({
-          household_id: item.household_id.toString(),
-          village_id: item.village_id.toString(),
-          family_size: item.family_size,
-          lat: item.lat,
-          lon: item.lon,
-          priority_level: item.priority_level,
-          hunger_probability: item.hunger_probability,
-        });
-        if (error) {
-          console.error("Error inserting:", error);
+        for (const item of result) {
+          await supabase.from("households").insert({
+            household_id: item.household_id.toString(),
+            village_id: item.village_id.toString(),
+            family_size: item.family_size,
+            lat: item.lat,
+            lon: item.lon,
+            priority_level: item.priority_level,
+            hunger_probability: item.hunger_probability,
+          });
         }
+        router.push("/households");
       }
-      router.push("/households");
-    } else {
-      console.log("Result is not array:", result);
-      alert("Unexpected response format");
-    }
-      console.log("Prediction result:", JSON.stringify(result, null, 2))
-      
     } catch (error) {
-      console.error("Error sending to backend:", error)
-      alert("Error sending data to backend")
+      console.error("Error:", error)
     } finally {
       setLoading(false)
     }
@@ -99,145 +90,154 @@ export default function UploadExcel() {
   const familySizeDistribution = () => {
     const familySizes = data.map((row) => row.family_size)
     const uniqueFamilySizes = [...new Set(familySizes)]
-    const distribution = uniqueFamilySizes.map((size) => ({
-      name: `Family Size ${size}`,
+    return uniqueFamilySizes.map((size) => ({
+      name: `Size ${size}`,
       value: familySizes.filter((s) => s === size).length,
     }))
-    return distribution
   }
 
   const villageDistribution = () => {
     const villages = data.map((row) => row.village_id)
     const uniqueVillages = [...new Set(villages)]
-    const distribution = uniqueVillages.map((village) => ({
-      name: `Village ${village}`,
+    return uniqueVillages.map((village) => ({
+      name: `V-${village}`,
       value: villages.filter((v) => v === village).length,
     }))
-    return distribution
   }
 
   return (
-    <div className="bg-gradient-to-br from-green-50 via-white to-blue-50 p-6 rounded-lg">
-      <Card className="shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-800">
-            <FileSpreadsheetIcon className="h-8 w-8 text-green-600" />
-            Upload Household Data
-          </CardTitle>
-          <p className="text-gray-600 mt-2">Analyze and predict hunger risk for households by uploading your Excel file.</p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileUpload}
-                disabled={loading}
-                className="hidden"
-                id="file-upload"
-              />
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-lg font-medium text-gray-700">Click to upload Excel file</p>
-                <p className="text-sm text-gray-500">Supported formats: .xlsx, .xls</p>
-              </label>
-            </div>
-            {loading && <p className="text-center text-blue-600">Processing...</p>}
-            {data.length > 0 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Households</CardTitle>
-                      <BarChart3Icon className="h-5 w-5" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{data.length}</div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Average Family Size</CardTitle>
-                      <UsersIcon className="h-5 w-5" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{(data.reduce((sum, row) => sum + row.family_size, 0) / data.length).toFixed(1)}</div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Unique Villages</CardTitle>
-                      <PieChartIcon className="h-5 w-5" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{new Set(data.map(row => row.village_id)).size}</div>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3Icon className="h-5 w-5" />
-                        Family Size Distribution
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={familySizeDistribution()}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="value" fill="#8884d8" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <PieChartIcon className="h-5 w-5" />
-                        Households by Village
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={villageDistribution()}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => {
-                              if (!name || percent === undefined) return '';
-                              return `${name} ${(percent * 100).toFixed(0)}%`;
-                            }}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {villageDistribution().map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </div>
-                <Button onClick={sendToBackend} disabled={loading} className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 rounded-lg shadow-lg">
-                  {loading ? "Predicting..." : "Predict Hunger Risk"}
-                </Button>
-              </div>
-            )}
+    <div className="min-h-screen bg-[#fcfdfe] p-4 md:p-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-6xl mx-auto space-y-8"
+      >
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Data Ingestion</h1>
+            <p className="text-slate-500 font-medium">Upload datasets for AI-driven hunger risk assessment.</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="p-2 bg-emerald-100 rounded-lg"><DatabaseIcon className="w-5 h-5 text-emerald-600" /></div>
+            <div className="pr-4"><p className="text-xs text-slate-400 font-bold uppercase">System Status</p><p className="text-sm font-bold text-slate-700">Ready for Sync</p></div>
+          </div>
+        </div>
+
+        {/* Upload Area */}
+        <Card className={`relative overflow-hidden border-2 border-dashed transition-all duration-300 rounded-[32px] ${data.length > 0 ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-white hover:border-emerald-400'}`}>
+          <CardContent className="p-12">
+            <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" id="file-upload" />
+            <label htmlFor="file-upload" className="flex flex-col items-center cursor-pointer">
+              <AnimatePresence mode="wait">
+                {data.length === 0 ? (
+                  <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+                    <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                      <UploadIcon className="h-10 w-10 text-slate-400" />
+                    </div>
+                    <p className="text-xl font-bold text-slate-800">Drop your dataset here</p>
+                    <p className="text-slate-400 mt-2 font-medium">Support for .xlsx and .csv formats</p>
+                  </motion.div>
+                ) : (
+                  <motion.div key="success" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
+                    <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-200">
+                      <CheckCircle2Icon className="h-10 w-10 text-white" />
+                    </div>
+                    <p className="text-xl font-bold text-emerald-800">Dataset Loaded Successfully</p>
+                    <p className="text-emerald-600/70 mt-2 font-medium">{data.length} households parsed</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </label>
+          </CardContent>
+        </Card>
+
+        {data.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatCard title="Target Households" value={data.length} icon={<UsersIcon />} color="bg-blue-500" />
+              <StatCard title="Avg Family Size" value={(data.reduce((s, r) => s + r.family_size, 0) / data.length).toFixed(1)} icon={<BarChart3Icon />} color="bg-emerald-500" />
+              <StatCard title="Villages Covered" value={new Set(data.map(r => r.village_id)).size} icon={<PieChartIcon />} color="bg-violet-500" />
+            </div>
+
+            {/* Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <ChartWrapper title="Family Demographics" subtitle="Distribution by member count">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={familySizeDistribution()}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                    <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
+                    <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+
+              <ChartWrapper title="Geographic Density" subtitle="Households across sectors">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={villageDistribution()} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
+                      {villageDistribution().map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+            </div>
+
+            {/* Action Button */}
+            <Button 
+              onClick={sendToBackend} 
+              disabled={loading}
+              className="w-full h-16 rounded-[24px] bg-slate-900 hover:bg-slate-800 text-white text-lg font-bold shadow-2xl shadow-slate-200 flex gap-3 active:scale-[0.99] transition-all"
+            >
+              {loading ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  Running Neural Assessment...
+                </div>
+              ) : (
+                <>
+                  <BrainCircuitIcon className="w-6 h-6 text-emerald-400" />
+                  Execute ML Prediction Model
+                </>
+              )}
+            </Button>
+          </motion.div>
+        )}
+      </motion.div>
     </div>
   )
 }
 
+function StatCard({ title, value, icon, color }: any) {
+  return (
+    <Card className="border-none shadow-sm bg-white overflow-hidden group">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">{title}</p>
+            <p className="text-3xl font-black text-slate-800">{value}</p>
+          </div>
+          <div className={`p-4 rounded-2xl ${color} text-white shadow-lg shadow-opacity-20 transition-transform group-hover:scale-110`}>
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ChartWrapper({ title, subtitle, children }: any) {
+  return (
+    <Card className="border-none shadow-sm bg-white rounded-[32px]">
+      <CardHeader>
+        <CardTitle className="text-xl font-bold text-slate-800">{title}</CardTitle>
+        <p className="text-sm text-slate-400 font-medium">{subtitle}</p>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  )
+}
