@@ -13,8 +13,11 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, UploadIcon, Handshake } from "lucide-react"
+
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, GitGraphIcon, Globe, UploadIcon } from "lucide-react"
+import {  Handshake } from "lucide-react"
 import { createSupabaseClient } from "@/lib/supabase"
+
 
 // This is sample data.
 const data = {
@@ -39,8 +42,31 @@ const data = {
       url: "/dashboard/upload",
       icon: <UploadIcon />,
     },
+    {
+      title: "Visualizer",
+      url: "/visualizer",
+      icon: <Globe />,
+    },
+    {
+      title: "Donations",
+      url: "#",
+      icon: <PieChartIcon />,
+      items: [
+        {
+          title: "Post Donation",
+          url: "/dashboard/donate",
+        },
+        {
+          title: "My Donations",
+          url: "/dashboard/my-donations",
+        },
+      ],
+    },
     
   ],
+ 
+    
+
   projects: [
     {
       name: "Food Rescue Project",
@@ -67,6 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   React.useEffect(() => {
     const fetchUser = async () => {
       const supabase = createSupabaseClient();
+      if (!supabase) return;
       const { data: { user }, error } = await supabase.auth.getUser();
       if (user) {
         setUser({
@@ -123,6 +150,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={sidebarData.navMain} />
+        
         {/* <NavProjects projects={sidebarData.projects} /> */}
       </SidebarContent>
       <SidebarFooter>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sanchez, Geist_Mono } from "next/font/google";
+// import "./globals.css";
 import "./globals.css";
 import Providers from "@/components/providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,7 +32,7 @@ export default function RootLayout({
       <body
         className={`${sanchez.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
+        {/* <Navbar /> */}
         <TooltipProvider>
           <Providers>{children}</Providers>
         </TooltipProvider>
