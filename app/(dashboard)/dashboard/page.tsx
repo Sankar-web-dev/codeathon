@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { PieChartIcon, MapIcon, PackageIcon, UsersIcon } from "lucide-react"
+import UploadExcel from "@/components/upload-excel"
 
 export default function Page() {
   return (
@@ -71,7 +72,7 @@ export default function Page() {
             </CardContent>
           </Card>
         </div>
-        <div className="min-h-screen flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+        <UploadExcel />
       </div>
     </>
   )

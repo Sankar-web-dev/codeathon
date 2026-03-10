@@ -13,7 +13,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, UploadIcon } from "lucide-react"
 import { createSupabaseClient } from "@/lib/supabase"
 
 // This is sample data.
@@ -33,6 +33,11 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: <FrameIcon />,
+    },
+    {
+      title: "Upload Excel",
+      url: "/dashboard/upload",
+      icon: <UploadIcon />,
     },
     {
       title: "Donations",
